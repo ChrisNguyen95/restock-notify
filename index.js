@@ -50,7 +50,12 @@ app.post('/apps/restock-notify', async (req, res) => {
           tags: tags.join(', '),
           accepts_marketing: true,
           accepts_marketing_updated_at: new Date().toISOString(),
-          marketing_opt_in_level: 'confirmed_opt_in' // Thêm dòng này
+          marketing_opt_in_level: 'confirmed_opt_in',
+          email_marketing_consent: {
+            state: 'subscribed',
+            opt_in_level: 'confirmed_opt_in',
+            consent_updated_at: new Date().toISOString()
+          }
         }
       }, {
         headers: {
@@ -72,8 +77,31 @@ app.post('/apps/restock-notify', async (req, res) => {
           tags: tag,
           accepts_marketing: true,
           accepts_marketing_updated_at: new Date().toISOString(),
-          marketing_opt_in_level: 'confirmed_opt_in', // Thêm dòng này
-          email_marketing_consent: { // Thêm object này
+          marketing_opt_in_level: 'confirmed_opt_in',
+          email_marketing_consent: {
+            state: 'subscribed',
+            opt_in_level: 'confirmed_opt_in',
+            consent_updated_at: new Date().toISOString()
+          },
+          // Thêm các field này để đảm bảo
+          verified_email: true,
+          send_email_welcome: false // Tránh gửi welcome email
+        }
+      }, {
+        headers: {
+          'X-Shopify-Access-Token': SHOPIFY_ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Sau khi tạo, update lại lần nữa để đảm bảo
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s
+      
+      await axios.put(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/2024-01/customers/${newCustomerRes.data.customer.id}.json`, {
+        customer: {
+          accepts_marketing: true,
+          marketing_opt_in_level: 'confirmed_opt_in',
+          email_marketing_consent: {
             state: 'subscribed',
             opt_in_level: 'confirmed_opt_in',
             consent_updated_at: new Date().toISOString()
