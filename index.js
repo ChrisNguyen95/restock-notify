@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+require('dotenv').config();
 const axios = require('axios');
 const app = express();
 
@@ -9,10 +10,7 @@ const PORT = process.env.PORT || 3000;
 const SHOPIFY_ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const SHOPIFY_STORE_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
 
-// CORS cho phép tất cả origin
 app.use(cors());
-
-// Parse JSON
 app.use(bodyParser.json());
 
 app.get("/", (req, res) => {
@@ -21,6 +19,8 @@ app.get("/", (req, res) => {
 
 app.post('/apps/restock-notify', async (req, res) => {
   const { email, tag } = req.body;
+
+  console.log('Received request:', req.body);
 
   if (!email || !tag) return res.status(400).json({ error: 'Missing email or tag' });
 
@@ -40,7 +40,11 @@ app.post('/apps/restock-notify', async (req, res) => {
       if (!tags.includes(tag)) tags.push(tag);
 
       await axios.put(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/2024-01/customers/${customer.id}.json`, {
-        customer: { id: customer.id, tags: tags.join(', ') }
+        customer: {
+          id: customer.id,
+          tags: tags.join(', '),
+          accepts_marketing: true // <-- Bật email marketing
+        }
       }, {
         headers: {
           'X-Shopify-Access-Token': SHOPIFY_ACCESS_TOKEN,
@@ -48,10 +52,14 @@ app.post('/apps/restock-notify', async (req, res) => {
         }
       });
 
-      return res.json({ message: 'Tag updated for existing customer' });
+      return res.json({ message: 'Tag and marketing subscription updated for existing customer' });
     } else {
       await axios.post(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/2024-01/customers.json`, {
-        customer: { email: email, tags: tag }
+        customer: {
+          email: email,
+          tags: tag,
+          accepts_marketing: true // <-- Bật email marketing
+        }
       }, {
         headers: {
           'X-Shopify-Access-Token': SHOPIFY_ACCESS_TOKEN,
@@ -59,7 +67,7 @@ app.post('/apps/restock-notify', async (req, res) => {
         }
       });
 
-      return res.json({ message: 'New customer created with tag' });
+      return res.json({ message: 'New customer created with tag and subscribed to marketing' });
     }
 
   } catch (err) {
