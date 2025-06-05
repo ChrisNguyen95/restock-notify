@@ -17,28 +17,11 @@ app.get("/", (req, res) => {
 });
 
 app.post('/apps/restock-notify', async (req, res) => {
-  const { email, tag, productHandle } = req.body;
+  const { email, tag } = req.body;
   console.log('Received request:', req.body);
   
-  if (!email) {
-    return res.status(400).json({ error: 'Missing email' });
-  }
-  
-  // Tạo các tags cần thiết
-  const tagsToAdd = [];
-  
-  // Thêm tag gốc nếu có
-  if (tag) {
-    tagsToAdd.push(tag);
-  }
-  
-  // Thêm tag restock với product handle nếu có
-  if (productHandle) {
-    tagsToAdd.push(`restock-${productHandle}`);
-  }
-  
-  if (tagsToAdd.length === 0) {
-    return res.status(400).json({ error: 'Missing tag or productHandle' });
+  if (!email || !tag) {
+    return res.status(400).json({ error: 'Missing email or tag' });
   }
   
   try {
@@ -55,19 +38,16 @@ app.post('/apps/restock-notify', async (req, res) => {
     if (customers.length > 0) {
       // Update existing customer
       const customer = customers[0];
-      const existingTags = customer.tags ? customer.tags.split(',').map(t => t.trim()) : [];
+      const tags = customer.tags ? customer.tags.split(',').map(t => t.trim()) : [];
       
-      // Thêm các tags mới nếu chưa có
-      tagsToAdd.forEach(newTag => {
-        if (!existingTags.includes(newTag)) {
-          existingTags.push(newTag);
-        }
-      });
+      if (!tags.includes(tag)) {
+        tags.push(tag);
+      }
       
       await axios.put(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/2024-01/customers/${customer.id}.json`, {
         customer: {
           id: customer.id,
-          tags: existingTags.join(', '),
+          tags: tags.join(', '),
           accepts_marketing: true,
           accepts_marketing_updated_at: new Date().toISOString(),
           marketing_opt_in_level: 'confirmed_opt_in',
@@ -85,9 +65,8 @@ app.post('/apps/restock-notify', async (req, res) => {
       });
       
       return res.json({ 
-        message: 'Tags and marketing subscription updated for existing customer',
-        customer_id: customer.id,
-        tags_added: tagsToAdd
+        message: 'Tag and marketing subscription updated for existing customer',
+        customer_id: customer.id 
       });
       
     } else {
@@ -95,7 +74,7 @@ app.post('/apps/restock-notify', async (req, res) => {
       const newCustomerRes = await axios.post(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/2024-01/customers.json`, {
         customer: {
           email: email,
-          tags: tagsToAdd.join(', '),
+          tags: tag,
           accepts_marketing: true,
           accepts_marketing_updated_at: new Date().toISOString(),
           marketing_opt_in_level: 'confirmed_opt_in',
@@ -104,8 +83,9 @@ app.post('/apps/restock-notify', async (req, res) => {
             opt_in_level: 'confirmed_opt_in',
             consent_updated_at: new Date().toISOString()
           },
+          // Thêm các field này để đảm bảo
           verified_email: true,
-          send_email_welcome: false
+          send_email_welcome: false // Tránh gửi welcome email
         }
       }, {
         headers: {
@@ -135,9 +115,8 @@ app.post('/apps/restock-notify', async (req, res) => {
       });
       
       return res.json({ 
-        message: 'New customer created with tags and subscribed to marketing',
-        customer_id: newCustomerRes.data.customer.id,
-        tags_added: tagsToAdd
+        message: 'New customer created with tag and subscribed to marketing',
+        customer_id: newCustomerRes.data.customer.id 
       });
     }
     
