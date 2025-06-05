@@ -1,14 +1,12 @@
 const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
-const cors = require('cors'); // 👈 THÊM DÒNG NÀY
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const SHOPIFY_ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const SHOPIFY_STORE_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
 
-app.use(cors()); 
 app.use(bodyParser.json());
 
 app.get("/", (req, res) => {
