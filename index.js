@@ -43,7 +43,8 @@ app.post('/apps/restock-notify', async (req, res) => {
         customer: {
           id: customer.id,
           tags: tags.join(', '),
-          accepts_marketing: true // <-- Bật email marketing
+          accepts_marketing: true,
+          accepts_marketing_updated_at: new Date().toISOString()
         }
       }, {
         headers: {
@@ -58,7 +59,8 @@ app.post('/apps/restock-notify', async (req, res) => {
         customer: {
           email: email,
           tags: tag,
-          accepts_marketing: true // <-- Bật email marketing
+          accepts_marketing: true,
+          accepts_marketing_updated_at: new Date().toISOString()
         }
       }, {
         headers: {
