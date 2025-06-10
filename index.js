@@ -83,9 +83,8 @@ app.post('/apps/restock-notify', async (req, res) => {
             opt_in_level: 'confirmed_opt_in',
             consent_updated_at: new Date().toISOString()
           },
-          // Thêm các field này để đảm bảo
           verified_email: true,
-          send_email_welcome: false // Tránh gửi welcome email
+          send_email_welcome: false 
         }
       }, {
         headers: {
@@ -94,8 +93,7 @@ app.post('/apps/restock-notify', async (req, res) => {
         }
       });
       
-      // Sau khi tạo, update lại lần nữa để đảm bảo
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s
+      await new Promise(resolve => setTimeout(resolve, 1000)); 
       
       await axios.put(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/2024-01/customers/${newCustomerRes.data.customer.id}.json`, {
         customer: {
